@@ -1,16 +1,22 @@
+package src;
+
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.List;
 import java.util.PriorityQueue;
 
 public class SJF {
 
-    public void runScheduling (ArrayList<process> allProcesses , int contextSwitchingTime){
-        // sort all process by arrival_time
+    public void run (){
+        InputData input = new InputData();
+        List<Process> allProcesses = input.processes;
+        int contextSwitchingTime = input.contextSwitch;
+        // sort all src.process by arrival_time
         allProcesses.sort(Comparator.comparingInt(p -> p.arrival_time));
 
-        PriorityQueue<process> readyQueue = new PriorityQueue<>(new Comparator<process>() {
+        PriorityQueue<Process> readyQueue = new PriorityQueue<>(new Comparator<Process>() {
             @Override
-            public int compare(process o1, process o2) {
+            public int compare(Process o1, Process o2) {
                 if (o1.remaining_time != o2.remaining_time){
                     return Integer.compare(o1.remaining_time , o2.remaining_time);
                 }
@@ -26,7 +32,7 @@ public class SJF {
         ArrayList<String> processList = new ArrayList<>(); // To store the order in which operations are executed
 
 
-        process currentlyRunningProcess = null;
+        Process currentlyRunningProcess = null;
         int nextProcess = 0;
 
         //System.out.println("Current Time: " + currentTime + " | Completed: " + totalCompleted);
@@ -38,11 +44,11 @@ public class SJF {
                 nextProcess++;
             }
 
-            // If I have process or more in readyQueue
+            // If I have src.process or more in readyQueue
             if (!readyQueue.isEmpty()) {
-                process readyPro = readyQueue.peek(); // I take the first process in readyQueue
+                Process readyPro = readyQueue.peek(); // I take the first src.process in readyQueue
 
-                if (currentlyRunningProcess == null) { // If CPU is empty (First execution or completion of a previous process)
+                if (currentlyRunningProcess == null) { // If CPU is empty (First execution or completion of a previous src.process)
                     // Add context switching time penalty if currentTime and contextSwitching greater than 0
                     if (currentTime > 0 && contextSwitchingTime > 0) {
                         currentTime += contextSwitchingTime;
@@ -56,9 +62,9 @@ public class SJF {
                     currentlyRunningProcess = readyQueue.poll();
                 }
                 else if (readyPro.remaining_time < currentlyRunningProcess.remaining_time) {
-                    // Preemption: The process in the readyQueue is shorter than the one currently running.
+                    // Preemption: The src.process in the readyQueue is shorter than the one currently running.
 
-                    // Stop the currently running process and return it to the queue
+                    // Stop the currently running src.process and return it to the queue
                     readyQueue.add(currentlyRunningProcess);
 
                     // Add context switching time penalty
@@ -70,22 +76,22 @@ public class SJF {
                 // else: No preemption, currentlyRunningProcess continues execution (no context switch)
             }
 
-            // Execution and Check if the process ended
+            // Execution and Check if the src.process ended
             if (currentlyRunningProcess != null) {
-                // Add process name to processList
-                if (processList.isEmpty() || !processList.getLast().equals(currentlyRunningProcess.name)) {
+                // Add src.process name to processList
+                if (processList.isEmpty() || !processList.get(processList.size() - 1).equals(currentlyRunningProcess.name)) {
                     processList.add(currentlyRunningProcess.name);
                 }
 
                 currentlyRunningProcess.remaining_time--;
                 currentTime++;
 
-                // Check if process is completed
+                // Check if src.process is completed
                 if (currentlyRunningProcess.remaining_time == 0) {
                     currentlyRunningProcess.completion_time = currentTime;
                     currentlyRunningProcess.computeTimes(); // Compute times
                     totalCompleted++;
-                    currentlyRunningProcess = null; // Freeing up the CPU to allow a new process to work in the next time.
+                    currentlyRunningProcess = null; // Freeing up the CPU to allow a new src.process to work in the next time.
                 }
             } else {
                 // There are no ready processes and no processes in operation.
@@ -96,7 +102,7 @@ public class SJF {
         double turnaroundTime = 0;
         double waitingTime = 0;
 
-        for (process p : allProcesses){
+        for (Process p : allProcesses){
             turnaroundTime += p.turnaround_time;
             waitingTime += p.waiting_time;
         }
@@ -119,8 +125,8 @@ public class SJF {
                 "Process", "Arrival Time", "Burst Time", "Completion Time", "Turnaround Time", "Waiting Time");
         System.out.println("---------------------------------------------------------------------------------------------------");
 
-        // Data for each process
-        for (process p : allProcesses) {
+        // Data for each src.process
+        for (Process p : allProcesses) {
             System.out.printf("%-10s | %-15d | %-15d | %-15d | %-15d | %-15d\n",
                     p.name, p.arrival_time, p.burst_time, p.completion_time, p.turnaround_time, p.waiting_time);
         }

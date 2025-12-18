@@ -2,15 +2,20 @@ package src;
 
 import java.util.*;
 public class RoundRobin {
-    public static void run(List<process> processes, int time_quantum, int context_time) {
-        Queue<process> readyQueue = new LinkedList<>();
+    public  void run() {
+        InputData input = new InputData();
+        List<Process> processes = input.processes;
+        int time_quantum = input.rrQuantum;
+        int context_time = input.contextSwitch;
+
+        Queue<Process> readyQueue = new LinkedList<>();
         int time = 0;
         int nfinished = 0;
         int n = processes.size();
         double averagewt = 0;
         double averagetat = 0;
         int i = 0;
-        process previous = null;
+        Process previous = null;
         processes.sort(Comparator.comparingInt(p -> p.arrival_time));
         while (nfinished < n) {
             while (i < n && processes.get(i).arrival_time <= time) {
@@ -21,7 +26,7 @@ public class RoundRobin {
                 time++;
                 continue;
             }
-            process process = readyQueue.poll();
+            Process process = readyQueue.poll();
             if (previous != null && previous != process) {
                 time += context_time;
             }
@@ -48,6 +53,5 @@ public class RoundRobin {
         }
         averagewt = averagewt / n;
         averagetat = averagetat / n;
-
     }
 }

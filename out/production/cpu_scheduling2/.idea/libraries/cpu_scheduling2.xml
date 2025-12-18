@@ -1,0 +1,14 @@
+<component name="libraryTable">
+  <library name="cpu_scheduling2">
+    <CLASSES>
+      <root url="jar://$USER_HOME$/Downloads/json-simple-1.1.1.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="file://$PROJECT_DIR$" />
+    </SOURCES>
+    <excluded>
+      <root url="jar://$PROJECT_DIR$/libs/json-simple-1.1.1.jar!/" />
+    </excluded>
+  </library>
+</component>
