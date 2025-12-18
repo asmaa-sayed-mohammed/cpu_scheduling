@@ -1,15 +1,21 @@
 package src;
+import java.util.*;
 
+class AGProcess {
+    String name;
+    int arrival, burst, remaining, priority;
+    int quantum;
+    int completion;
+    List<Integer> quantumHistory = new ArrayList<>();
 
-
-public class Main {
-    public static void main(String[] args) {
-
-        System.out.printf("Hello and welcome!");
-
-        for (int i = 1; i <= 5; i++) {
-
-            System.out.println("i = " + i);
-        }
+    AGProcess(String n, int a, int b, int p, int q) {
+        name = n;
+        arrival = a;
+        burst = b;
+        remaining = b;
+        priority = p;
+        quantum = q;
+        quantumHistory.add(q);
     }
 }
+
