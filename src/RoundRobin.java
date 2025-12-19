@@ -13,6 +13,7 @@ public class RoundRobin {
         int context_time = input.contextSwitch;
 
         Queue<Process> readyQueue = new LinkedList<>();
+        List<String> executionorder = new ArrayList<>();
         int time = 0;
         int nfinished = 0;
         int n = processes.size();
@@ -31,6 +32,7 @@ public class RoundRobin {
                 continue;
             }
             Process process = readyQueue.poll();
+            executionorder.add(process.name);
             if (previous != null && previous != process) {
                 time += context_time;
             }
@@ -57,5 +59,15 @@ public class RoundRobin {
         }
         averagewt = averagewt / n;
         averagetat = averagetat / n;
+//        System.out.println("averagewt = " + averagewt);
+//        System.out.println("averagetat = " + averagetat);
+//        for (String string : executionorder) {
+//            System.out.print(string + " ");
+//        }
+//        System.out.println("\n");
+//        for (process p :processes) {
+//            System.out.println(p.name + " "+p.waiting_time+" "+p.turnaround_time);
+//
+//        }
     }
 }
