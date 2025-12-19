@@ -2,6 +2,9 @@ package src;
 
 import org.json.simple.JSONObject;
 
+import java.util.ArrayList;
+import java.util.List;
+
 
 public class Process {
 //    JSONObject obj = new JSONObject();
@@ -27,9 +30,13 @@ public class Process {
         this.remaining_time = burst_time;
     }
 
-    public void computeTimes(){
+    public List<Integer> computeTimes(){
+        List<Integer> times = new ArrayList<>(2);
         turnaround_time = completion_time - arrival_time;
         waiting_time = turnaround_time - burst_time;
+        times.add(turnaround_time);
+        times.add(waiting_time);
+        return times;
     }
 
     public static Process createAgProcess(JSONObject obj) {

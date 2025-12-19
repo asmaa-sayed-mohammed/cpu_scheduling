@@ -18,4 +18,14 @@ public class ProcessOutput {
                 : null;
         return output;
     }
+
+    /**final general output
+     * sjf
+     * rr
+     * priority
+     * *execution order
+     * *process output
+     * *average waiting time
+     * *average turnaround time
+     * */
 }

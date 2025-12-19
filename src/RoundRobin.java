@@ -1,9 +1,13 @@
 package src;
 
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.util.*;
 public class RoundRobin {
-    public  void run() {
-        InputData input = new InputData();
+    public  void run(InputData input){
         List<Process> processes = input.processes;
         int time_quantum = input.rrQuantum;
         int context_time = input.contextSwitch;

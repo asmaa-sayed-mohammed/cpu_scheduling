@@ -7,8 +7,7 @@ import java.util.PriorityQueue;
 
 public class SJF {
 
-    public void run (){
-        InputData input = new InputData();
+    public general_output run (InputData input){
         List<Process> allProcesses = input.processes;
         int contextSwitchingTime = input.contextSwitch;
         // sort all src.process by arrival_time
@@ -89,7 +88,8 @@ public class SJF {
                 // Check if src.process is completed
                 if (currentlyRunningProcess.remaining_time == 0) {
                     currentlyRunningProcess.completion_time = currentTime;
-                    currentlyRunningProcess.computeTimes(); // Compute times
+                    List<Integer> times = new ArrayList<>(2);
+                    times = currentlyRunningProcess.computeTimes();// Compute times
                     totalCompleted++;
                     currentlyRunningProcess = null; // Freeing up the CPU to allow a new src.process to work in the next time.
                 }
@@ -99,16 +99,28 @@ public class SJF {
             }
         }
         // Calculate Averages
+        List<ProcessOutput> processOutputs = new ArrayList<>();
         double turnaroundTime = 0;
         double waitingTime = 0;
 
-        for (Process p : allProcesses){
-            turnaroundTime += p.turnaround_time;
-            waitingTime += p.waiting_time;
+        for (Process p : allProcesses) {
+            ProcessOutput out = new ProcessOutput();
+            out.name = p.name;
+            out.waitingTime = p.waiting_time;
+            out.turnaroundTime = p.turnaround_time;
+
+            waitingTime += out.waitingTime;
+            turnaroundTime += out.turnaroundTime;
+
+            processOutputs.add(out);
         }
 
         double avgTurnaroundTime = turnaroundTime / allProcesses.size();
         double avgWaitingTime = waitingTime / allProcesses.size();
+
+        ////===============output-object===================
+        general_output final_output = new general_output(processList, processOutputs, avgWaitingTime, avgTurnaroundTime);
+        System.out.println(final_output);
 
         System.out.println("\n------------------- Gantt Chart Simplified -------------------");
         // Print Simplified Gantt Chart
@@ -137,6 +149,6 @@ public class SJF {
         System.out.println("\n----------- Average Data  ------------");
         System.out.printf("Average Turnaround Time (ATT): %.2f\n", avgTurnaroundTime); // Print with 2 decimal places
         System.out.printf("Average Waiting Time (AWT): %.2f\n", avgWaitingTime); // Print with 2 decimal places
-
+        return final_output;
     }
 }
