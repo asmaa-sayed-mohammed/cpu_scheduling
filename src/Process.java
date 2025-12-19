@@ -16,7 +16,8 @@ public class Process {
     public String name;
     public int remaining_time;
     public int arrival_time;
-
+    public int lastReadyTime;
+    public int readyQueueIndex;
     public int waiting_time = 0;
     public int turnaround_time = 0;
     public int completion_time = 0;

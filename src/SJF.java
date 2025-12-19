@@ -5,9 +5,9 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.PriorityQueue;
 
-public class SJF {
+public class SJF implements Scheduler{
 
-    public general_output run (InputData input){
+    public general_output schedule (InputData input){
         List<Process> allProcesses = input.processes;
         int contextSwitchingTime = input.contextSwitch;
         // sort all src.process by arrival_time
