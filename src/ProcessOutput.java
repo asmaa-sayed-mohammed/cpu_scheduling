@@ -1,7 +1,6 @@
 package src;
 import java.util.*;
-import org.json.simple.JSONObject;
-import org.json.simple.JSONArray;
+
 
 public class ProcessOutput {
     String name;
@@ -9,23 +8,18 @@ public class ProcessOutput {
     int turnaroundTime;
     Integer quantumTime;
 
-    public static ProcessOutput fromJson(JSONObject obj){
-        ProcessOutput output = new ProcessOutput();
-        output.name = (String) obj.get("name");
-        output.waitingTime = ((Long) obj.get("waitingTime")).intValue();
-        output.turnaroundTime = ((Long) obj.get("turnaroundTime")).intValue();
-        output.quantumTime = (obj.containsKey("quantumTime")) ? ((Long) obj.get("quantumTime")).intValue()
-                : null;
-        return output;
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (obj == null || getClass() != obj.getClass()) return false;
+        ProcessOutput other = (ProcessOutput) obj;
+        return waitingTime == other.waitingTime &&
+                turnaroundTime == other.turnaroundTime &&
+                name.equals(other.name);
     }
 
-    /**final general output
-     * sjf
-     * rr
-     * priority
-     * *execution order
-     * *process output
-     * *average waiting time
-     * *average turnaround time
-     * */
+    @Override
+    public int hashCode() {
+        return Objects.hash(name, waitingTime, turnaroundTime);
+    }
 }

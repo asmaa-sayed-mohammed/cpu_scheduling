@@ -31,6 +31,26 @@ public class Process {
         this.remaining_time = burst_time;
     }
 
+    public Process copy() {
+        Process p = new Process(
+                this.name,
+                this.burst_time,
+                this.priority,
+                this.time_quantum,
+                this.arrival_time
+        );
+
+        p.remaining_time = this.remaining_time;
+        p.lastReadyTime = this.lastReadyTime;
+        p.readyQueueIndex = this.readyQueueIndex;
+        p.waiting_time = this.waiting_time;
+        p.turnaround_time = this.turnaround_time;
+        p.completion_time = this.completion_time;
+
+        return p;
+    }
+
+
     public List<Integer> computeTimes(){
         List<Integer> times = new ArrayList<>(2);
         turnaround_time = completion_time - arrival_time;

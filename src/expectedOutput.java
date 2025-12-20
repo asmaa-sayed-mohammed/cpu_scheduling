@@ -1,10 +1,10 @@
 package src;
 
 public class expectedOutput {
-    RoundRobin RR;
-    SJF SJF;
-    PriorityScheduler Priority;
-    expectedOutput(RoundRobin RR, SJF SJF, PriorityScheduler Priority){
+    general_output RR;
+    general_output SJF;
+    general_output Priority;
+    expectedOutput(general_output RR, general_output SJF, general_output Priority){
         this.RR = RR;
         this.SJF = SJF;
         this.Priority = Priority;

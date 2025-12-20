@@ -117,38 +117,8 @@ public class SJF implements Scheduler{
 
         double avgTurnaroundTime = turnaroundTime / allProcesses.size();
         double avgWaitingTime = waitingTime / allProcesses.size();
-
-        ////===============output-object===================
-        general_output final_output = new general_output(processList, processOutputs, avgWaitingTime, avgTurnaroundTime);
-        System.out.println(final_output);
-
-        System.out.println("\n------------------- Gantt Chart Simplified -------------------");
-        // Print Simplified Gantt Chart
-        for (String string : processList) {
-            System.out.print(string + " ");
-        }
-        System.out.println("\n");
-        System.out.println("---------------------------------------------------------------------------------------------------");
-
-        System.out.println("\n-------------------- Print Processes Data --------------------");
-
-
-        System.out.printf("%-10s | %-15s | %-15s | %-15s | %-15s | %-15s\n",
-                "Process", "Arrival Time", "Burst Time", "Completion Time", "Turnaround Time", "Waiting Time");
-        System.out.println("---------------------------------------------------------------------------------------------------");
-
-        // Data for each src.process
-        for (Process p : allProcesses) {
-            System.out.printf("%-10s | %-15d | %-15d | %-15d | %-15d | %-15d\n",
-                    p.name, p.arrival_time, p.burst_time, p.completion_time, p.turnaround_time, p.waiting_time);
-        }
-        System.out.println("---------------------------------------------------------------------------------------------------");
-
-
-        // Print Average Summary
-        System.out.println("\n----------- Average Data  ------------");
-        System.out.printf("Average Turnaround Time (ATT): %.2f\n", avgTurnaroundTime); // Print with 2 decimal places
-        System.out.printf("Average Waiting Time (AWT): %.2f\n", avgWaitingTime); // Print with 2 decimal places
-        return final_output;
+        double avgWaitingRounded = Math.round(avgWaitingTime * 10.0) / 10.0;
+        double avgTurnaroundRounded = Math.round(avgTurnaroundTime * 10.0) / 10.0;
+        return new general_output(processList, processOutputs, avgWaitingRounded, avgTurnaroundRounded);
     }
 }

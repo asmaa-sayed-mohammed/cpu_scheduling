@@ -1,19 +1,14 @@
 package src;
-
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-
-import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.util.*;
-public class RoundRobin {
-    public  void run(InputData input){
+public class RoundRobin implements Scheduler{
+    public  general_output schedule (InputData input){
         List<Process> processes = input.processes;
+        List<ProcessOutput> outputs = new ArrayList<>();
         int time_quantum = input.rrQuantum;
         int context_time = input.contextSwitch;
 
         Queue<Process> readyQueue = new LinkedList<>();
-        List<String> executionorder = new ArrayList<>();
+        List<String> executionOrder = new ArrayList<>();
         int time = 0;
         int nfinished = 0;
         int n = processes.size();
@@ -32,7 +27,7 @@ public class RoundRobin {
                 continue;
             }
             Process process = readyQueue.poll();
-            executionorder.add(process.name);
+            executionOrder.add(process.name);
             if (previous != null && previous != process) {
                 time += context_time;
             }
@@ -54,20 +49,19 @@ public class RoundRobin {
                 nfinished++;
             }
             previous = process;
+        }
+        for (Process p : processes){
+            ProcessOutput out = new ProcessOutput();
+            out.name = p.name;
+            out.waitingTime = p.waiting_time;
+            out.turnaroundTime = p.turnaround_time;
 
-
+            outputs.add(out);
         }
         averagewt = averagewt / n;
         averagetat = averagetat / n;
-//        System.out.println("averagewt = " + averagewt);
-//        System.out.println("averagetat = " + averagetat);
-//        for (String string : executionorder) {
-//            System.out.print(string + " ");
-//        }
-//        System.out.println("\n");
-//        for (process p :processes) {
-//            System.out.println(p.name + " "+p.waiting_time+" "+p.turnaround_time);
-//
-//        }
+        double avgWaitingRounded = Math.round(averagewt * 10.0) / 10.0;
+        double avgTurnaroundRounded = Math.round(averagetat * 10.0) / 10.0;
+        return new general_output(executionOrder, outputs, avgWaitingRounded, avgWaitingRounded);
     }
 }

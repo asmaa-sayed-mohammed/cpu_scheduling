@@ -10,13 +10,13 @@ class InputReader {
 
         InputData data = new InputData();
         data.contextSwitch = input.containsKey("contextSwitch") ? ((Long) input.get("contextSwitch")).intValue()
-                : null;
+                : 0;
 
         data.rrQuantum = input.containsKey("rrQuantum") ? ((Long) input.get("rrQuantum")).intValue()
-                : null;
+                : 0;
 
         data.agingInterval = input.containsKey("agingInterval") ? ((Long) input.get("agingInterval")).intValue()
-                : null;
+                : 0;
 
         JSONArray arr = (JSONArray) input.get("processes");
         data.processes = new ArrayList<>();
