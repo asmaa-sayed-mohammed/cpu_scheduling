@@ -1,4 +1,3 @@
-
 package src;
 import java.util.List;
 import java.util.ArrayList;
@@ -85,9 +84,8 @@ public class PriorityScheduler implements Scheduler {
         }
     }
 
-    boolean CheckForAging(){
+    void CheckForAging(){
         // apply aging on starving processes
-        boolean aged = false;
         for(Process p : ready_queue){
             if (p != running_process) {
                 int waiting_time = currentTime - p.lastReadyTime;  //waiting = total time in system - burst time
@@ -95,17 +93,14 @@ public class PriorityScheduler implements Scheduler {
                 if(waiting_time >= agingInterval){
                     //waiting_time is increased by agingInterval ex.5, 10, 15,...
                     p.priority = (p.priority == 1)?1 : p.priority - 1;  // decrease num, increase priority, if not already == 1
-                    //p.lastReadyTime = currentTime;
 
                     // to not aging the following time units infinitely
                     p.lastReadyTime = currentTime;
-                    aged = true;
                 }
 
 
             }
         }
-        return aged;
     }
 
     void AdvanceTimeUnit(){
@@ -113,10 +108,6 @@ public class PriorityScheduler implements Scheduler {
         // handle things change every time unit
         AddInReady();
         Process next = null;
-        if (!ready_queue.isEmpty()) {
-            next = PickHighestPriority();
-        }
-
         // Apply aging to ready processes (before picking next)
         CheckForAging();
     }
@@ -125,7 +116,6 @@ public class PriorityScheduler implements Scheduler {
         //sorting ready queue by priority then the arrival time
         // we define the sort function using lambda function which return int
         // based on it sort function determine the order
-        // if equal also in arrival time it treat both the same, any order is ok
         // this the calling of defined lambda function at the same time
         ready_queue.sort((p1, p2) ->{
             if(p1.priority != p2.priority)
@@ -148,7 +138,7 @@ public class PriorityScheduler implements Scheduler {
         // the second condition is the key to know the highest priority process is changed and we must switch to process
         if((running_process != next_process)){
             // update last ready time when re-entering ready queue after preemption
-            if(running_process != null && running_process.remaining_time > 0)
+            if(running_process != null && running_process.remaining_time > 0 && running_process.lastExecuted == currentTime-1)
                 running_process.lastReadyTime = currentTime;
 
             for(int i = 0; i < contextSwitch; i++){
@@ -162,12 +152,11 @@ public class PriorityScheduler implements Scheduler {
     }
 
     void Execute(){
-        boolean aged = CheckForAging();
+        CheckForAging();
         Process highest = PickHighestPriority();
 
 
         if(highest != running_process){
-            //System.out.println("here");
             HandleContextSwitch(highest);
             running_process = highest;
             // only add to execution order if switching or starting
@@ -185,9 +174,8 @@ public class PriorityScheduler implements Scheduler {
         }
         else{
             // execute the highest priority process either changed or not
-            //running_process = next_process;
             running_process.remaining_time--;   // update the time by only one time before testing priority (preemptive)
-
+            running_process.lastExecuted = currentTime;
             AdvanceTimeUnit();  // update the clock
 
         }

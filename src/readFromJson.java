@@ -46,7 +46,7 @@ public class readFromJson {
         for (File f : files){
             JSONObject root = (JSONObject) parser.parse(new FileReader(f));
             InputData input = InputReader.read(root);
-            input_AG_json.add(input);
+            input_AG_json.add(input.copy());
         }
         return input_AG_json;
     }
@@ -112,11 +112,9 @@ public class readFromJson {
         return AG_output_json;
     }
 
-    // دالة مساعدة للبحث عن processResults في أي مستوى
     private JSONObject findProcessResults(JSONObject obj) {
         if (obj == null) return null;
 
-        // إذا كان هذا المستوى يحتوي على processResults
         if (obj.containsKey("processResults")) {
             return obj;
         }

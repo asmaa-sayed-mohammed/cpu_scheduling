@@ -1,279 +1,299 @@
 package src;
+import src.InputData;
 import java.util.*;
 
-public class AGScheduler {
-    public static AG_output runAGScheduler(InputData input) {
-        // نسخ العمليات
-        List<Process> processes = new ArrayList<>();
-        for (Process original : input.processes) {
-            Process copy = new Process(original.name, original.arrival_time,
-                    original.burst_time, original.priority,
-                    original.quantum);
-            copy.remaining_time = copy.burst_time;
-            copy.arrival_time = -1;
-            copy.completion_time = -1;
-            processes.add(copy);
+// =========================================================
+// 3. AGScheduler Main Logic (Corrected Flow with User Input)
+// =========================================================
+class AGScheduler {
+    public List<Process> allProcesses = new ArrayList<>();
+
+    private LinkedList<Process> readyQueue = new LinkedList<>();
+    private List<Process> completedProcesses = new ArrayList<>();
+    public List<process_AG_out> agOuts = new ArrayList<>();
+    private List<GanttSegment> ganttSegments = new ArrayList<>();
+    public List<String> executionOrder = new ArrayList<>();
+    public double totalTAT = 0;
+    public double totalWT = 0;
+
+    // Constructor for use from Main.java
+
+    // Main method for standalone execution (keeping your original)
+
+
+    private void buildExecutionOrder() {
+        executionOrder.clear();
+        String lastProcess = null;
+        for (GanttSegment seg : ganttSegments) {
+            if (!seg.name.equals(lastProcess)) {
+                executionOrder.add(seg.name);
+                lastProcess = seg.name;
+            }
+        }
+    }
+
+    private void updateQuantum(Process p, int caseNum, int remainingQ) {
+        if (caseNum == 1) p.quantum += 2;
+        else if (caseNum == 2) p.quantum += (int) Math.ceil((double) remainingQ / 2);
+        else if (caseNum == 3) p.quantum += remainingQ;
+
+        p.updateQuantumHistory(p.quantum);
+    }
+
+    public AG_output runAG(InputData input){
+        allProcesses = new ArrayList<>();
+        for (Process p : input.processes) {
+            Process copy = p.copy(); // This will copy the initial quantum history
+            allProcesses.add(copy);
         }
 
-        LinkedList<Process> readyQueue = new LinkedList<>();
-        List<Process> completedProcesses = new ArrayList<>();
-        List<String> executionOrder = new ArrayList<>();
-        List<String> executionOrderDetailed = new ArrayList<>();
+        readyQueue.clear();
+        completedProcesses.clear();
+        ganttSegments.clear();
+        executionOrder.clear();
+        totalTAT = 0;
+        totalWT = 0;
 
-        // ترتيب حسب وقت الوصول
-        processes.sort(Comparator.comparingInt(p -> p.arrival_time));
+        for (Process p : allProcesses) {
+            p.remaining_time = p.burst_time;
+            p.startTime = -1;
+            p.completion_time = -1;
+            p.resetQuantumHistory(); // Ensure clean history with initial quantum
+        }
 
+        allProcesses.sort(Comparator.comparingInt(p -> p.arrival_time));
+        runScheduler();
+        buildExecutionOrder();
+
+        agOuts.clear();
+        for (Process p : completedProcesses) {
+            process_AG_out ag = new process_AG_out();
+            int tat = p.completion_time - p.arrival_time;
+            int wt = tat - p.burst_time;
+            totalTAT += tat;
+            totalWT += wt;
+            ag.name = p.name;
+            ag.waitingTime = wt;
+            ag.turnaroundTime = tat;
+            ag.quantumHistory = new ArrayList<>(p.quantumTimeHistory); // Copy history
+            agOuts.add(ag);
+        }
+
+        double averageWaiting = totalWT / completedProcesses.size();
+        double averageTurnaround = totalTAT / completedProcesses.size();
+        return new AG_output(executionOrder, agOuts, averageWaiting, averageTurnaround);
+    }
+
+
+    private Process selectNextProcess() {
+        return readyQueue.poll();
+    }
+
+    // Finds the process that should preempt based on Priority, otherwise null.
+    private Process findPriorityPreemptor() {
+        if (readyQueue.isEmpty()) return null;
+        return readyQueue.stream()
+                .min(Comparator.comparingInt(p -> p.priority))
+                .orElse(null);
+    }
+
+    // Finds the process that should preempt based on SJF, otherwise null.
+    private Process findSJFPreemptor() {
+        if (readyQueue.isEmpty()) return null;
+        return readyQueue.stream()
+                .min(Comparator.comparingInt(p -> p.remaining_time))
+                .orElse(null);
+    }
+
+    public void runScheduler() {
         int currentTime = 0;
         Process currentRunning = null;
         int processIndex = 0;
         Process preemptor = null;
 
-        while (completedProcesses.size() < processes.size()) {
-            // إضافة العمليات التي وصلت
-            while (processIndex < processes.size() &&
-                    processes.get(processIndex).arrival_time <= currentTime) {
-                readyQueue.add(processes.get(processIndex));
+        while (completedProcesses.size() < allProcesses.size()) {
+            while (processIndex < allProcesses.size() && allProcesses.get(processIndex).arrival_time <= currentTime) {
+                if (!readyQueue.contains(allProcesses.get(processIndex))) {
+                    readyQueue.add(allProcesses.get(processIndex));
+                }
                 processIndex++;
             }
 
-            // اختيار العملية التالية (معالجة Preemption)
             if (currentRunning == null || currentRunning.remaining_time == 0 || preemptor != null) {
                 if (currentRunning != null && currentRunning.remaining_time == 0) {
                     currentRunning.completion_time = currentTime;
-                    completedProcesses.add(currentRunning);
                     currentRunning.quantum = 0;
-                    if (currentRunning.quantum_history == null) {
-                        currentRunning.quantum_history = new ArrayList<>();
-                    }
-                    currentRunning.quantum_history.add(0);
+                    currentRunning.quantumTimeHistory.add(0);
+                    completedProcesses.add(currentRunning);
                 }
 
                 if (preemptor != null) {
                     currentRunning = preemptor;
                     preemptor = null;
                     readyQueue.remove(currentRunning);
-                } else if (readyQueue.isEmpty()) {
-                    if (processIndex < processes.size()) {
-                        currentTime = processes.get(processIndex).arrival_time;
-                        continue;
-                    } else {
-                        break;
-                    }
+                } else if (!readyQueue.isEmpty()) {
+                    currentRunning = selectNextProcess();
                 } else {
-                    currentRunning = readyQueue.poll();
+                    if (processIndex < allProcesses.size()) {
+                        currentTime = allProcesses.get(processIndex).arrival_time;
+                        continue;
+                    } else break;
                 }
 
-                if (currentRunning.arrival_time == -1) {
-                    currentRunning.arrival_time = currentTime;
-                }
+                if (currentRunning.startTime == -1) currentRunning.startTime = currentTime;
             }
 
-            // تطبيق منطق AG
-            int[] stages = calculateStagesTimes(currentRunning.quantum);
-            int fcfsTime = stages[0];
-            int priorityTime = stages[1];
-            int sjfTime = stages[2];
-            int qBeforeRun = currentRunning.quantum;
-            int totalExecuted = 0;
+            int[] stages = currentRunning.calculateStagesTimes();
+            int fcfsTime = stages[0], priorityTime = stages[1], sjfTime = stages[2];
+            int qBeforeRun = currentRunning.quantum, totalExecuted = 0, segmentStart = currentTime;
 
-            // مرحلة FCFS
             if (fcfsTime > 0 && currentRunning.remaining_time > 0) {
                 int runLimit = Math.min(fcfsTime, currentRunning.remaining_time);
                 for (int t = 0; t < runLimit; t++) {
-                    executionOrder.add(currentRunning.name);
-                    executionOrderDetailed.add(currentRunning.name + "(FCFS)");
                     currentRunning.remaining_time--;
                     currentTime++;
                     totalExecuted++;
-
-                    // تحديث ready queue مع الواصلين الجدد
-                    while (processIndex < processes.size() &&
-                            processes.get(processIndex).arrival_time <= currentTime) {
-                        readyQueue.add(processes.get(processIndex));
-                        processIndex++;
-                    }
-
+                    while (processIndex < allProcesses.size() && allProcesses.get(processIndex).arrival_time <= currentTime)
+                        readyQueue.add(allProcesses.get(processIndex++));
                     if (currentRunning.remaining_time == 0) break;
                 }
-
+                if (totalExecuted > 0) ganttSegments.add(new GanttSegment(currentRunning.name, "FCFS", segmentStart, currentTime));
                 if (currentRunning.remaining_time == 0) continue;
-
-                // التحقق من Preemption بواسطة Priority (Case II)
-                Process priorityPreemptor = findPriorityPreemptor(readyQueue, currentRunning);
-                if (priorityPreemptor != null) {
-                    updateQuantumCaseII(currentRunning, qBeforeRun - totalExecuted);
+                Process pPreemptor = findPriorityPreemptor();
+                if (pPreemptor != null && pPreemptor.priority < currentRunning.priority) {
+                    currentRunning.updateQuantumCaseII(qBeforeRun - totalExecuted);
+                    updateQuantum(currentRunning, 2, qBeforeRun - totalExecuted);
                     readyQueue.addLast(currentRunning);
-                    preemptor = priorityPreemptor;
+                    preemptor = pPreemptor;
                     currentRunning = null;
                     continue;
                 }
             }
 
-            // مرحلة Priority
             if (priorityTime > 0 && currentRunning != null && currentRunning.remaining_time > 0) {
                 int runLimit = Math.min(priorityTime, currentRunning.remaining_time);
                 for (int t = 0; t < runLimit; t++) {
-                    executionOrder.add(currentRunning.name);
-                    executionOrderDetailed.add(currentRunning.name + "(Priority)");
                     currentRunning.remaining_time--;
                     currentTime++;
                     totalExecuted++;
-
-                    while (processIndex < processes.size() &&
-                            processes.get(processIndex).arrival_time <= currentTime) {
-                        readyQueue.add(processes.get(processIndex));
-                        processIndex++;
-                    }
-
+                    while (processIndex < allProcesses.size() && allProcesses.get(processIndex).arrival_time <= currentTime)
+                        readyQueue.add(allProcesses.get(processIndex++));
                     if (currentRunning.remaining_time == 0) break;
                 }
-
+                if (totalExecuted > 0) ganttSegments.add(new GanttSegment(currentRunning.name, "Priority", segmentStart, currentTime));
                 if (currentRunning.remaining_time == 0) continue;
-
-                // التحقق من Preemption بواسطة SJF (Case III)
-                Process sjfPreemptor = findSJFPreemptor(readyQueue, currentRunning);
-                if (sjfPreemptor != null) {
-                    updateQuantumCaseIII(currentRunning, qBeforeRun - totalExecuted);
+                Process sPreemptor = findSJFPreemptor();
+                if (sPreemptor != null && sPreemptor.remaining_time < currentRunning.remaining_time) {
+                    currentRunning.updateQuantumCaseIII(qBeforeRun - totalExecuted);
                     readyQueue.addLast(currentRunning);
-                    preemptor = sjfPreemptor;
+                    preemptor = sPreemptor;
                     currentRunning = null;
                     continue;
                 }
             }
 
-            // مرحلة SJF
             if (sjfTime > 0 && currentRunning != null && currentRunning.remaining_time > 0) {
                 int runLimit = Math.min(sjfTime, currentRunning.remaining_time);
                 for (int t = 0; t < runLimit; t++) {
-                    executionOrder.add(currentRunning.name);
-                    executionOrderDetailed.add(currentRunning.name + "(SJF)");
                     currentRunning.remaining_time--;
                     currentTime++;
                     totalExecuted++;
-
-                    while (processIndex < processes.size() &&
-                            processes.get(processIndex).arrival_time <= currentTime) {
-                        readyQueue.add(processes.get(processIndex));
-                        processIndex++;
-                    }
-
+                    while (processIndex < allProcesses.size() && allProcesses.get(processIndex).arrival_time <= currentTime)
+                        readyQueue.add(allProcesses.get(processIndex++));
                     if (currentRunning.remaining_time == 0) break;
-
-                    // Preemptive SJF Check
-                    Process sjfPreemptor = findSJFPreemptor(readyQueue, currentRunning);
-                    if (sjfPreemptor != null) {
-                        updateQuantumCaseIII(currentRunning, qBeforeRun - totalExecuted);
+                    Process sPreemptor = findSJFPreemptor();
+                    if (sPreemptor != null && sPreemptor.remaining_time < currentRunning.remaining_time) {
+                        ganttSegments.add(new GanttSegment(currentRunning.name, "SJF", segmentStart, currentTime));
+                        currentRunning.updateQuantumCaseIII(qBeforeRun - totalExecuted);
                         readyQueue.addLast(currentRunning);
-                        preemptor = sjfPreemptor;
+                        preemptor = sPreemptor;
                         currentRunning = null;
                         break;
                     }
                 }
+                if (currentRunning != null && preemptor == null)
+                    ganttSegments.add(new GanttSegment(currentRunning.name, "SJF", segmentStart, currentTime));
             }
 
-            // Case I: Quantum Exhaustion
-            if (currentRunning != null && currentRunning.remaining_time > 0 &&
-                    totalExecuted == qBeforeRun) {
-                updateQuantumCaseI(currentRunning);
+            if (currentRunning != null && currentRunning.remaining_time > 0 && totalExecuted == qBeforeRun) {
+                currentRunning.updateQuantumCaseI();
                 readyQueue.addLast(currentRunning);
                 currentRunning = null;
-            }
+            } else if (currentRunning != null && currentRunning.remaining_time == 0) continue;
+        }
+    }
+
+
+    // **********************************************
+    // Print Results
+    // **********************************************
+
+    public void printResults() {
+
+        System.out.println("=================================================");
+        System.out.println("           AG SCHEDULER SIMULATION RESULTS");
+        System.out.println("=================================================");
+
+        System.out.println("\n--- Detailed Execution Timeline (Gantt) ---");
+
+        if (ganttSegments.isEmpty()) {
+            System.out.println("No segments generated. Check input data or scheduler logic.");
+            return;
         }
 
-        // حساب النتائج النهائية
-        return buildAGOutput(processes, executionOrder);
+
+
+
+
+        System.out.println("\n--- Metrics Table ---");
+        System.out.printf("%-5s | %-5s | %-5s | %-5s | %-5s | %-5s%n",
+                "Proc", "AT", "BT", "CT", "TAT", "WT");
+        System.out.println("----------------------------------------------");
+
+        completedProcesses.sort(Comparator.comparing(p -> p.name));
+
+
+
+        System.out.println("\n----------------------------------------------");
+        System.out.printf("Average Waiting Time (AWT): %.2f%n", totalWT / completedProcesses.size());
+        System.out.printf("Average Turnaround Time (ATT): %.2f%n", totalTAT / completedProcesses.size());
+        System.out.println("=================================================");
     }
 
-    // ============== الدوال المساعدة ==============
-
-    private static int[] calculateStagesTimes(int quantum) {
-        int fcfsTime = (int) Math.ceil(0.25 * quantum);
-        int priorityTime = (int) Math.ceil(0.25 * quantum);
-        int sjfTime = quantum - (fcfsTime + priorityTime);
-        if (sjfTime < 0) sjfTime = 0;
-        return new int[]{fcfsTime, priorityTime, sjfTime};
+    // Add a simple run() method for Main.java compatibility
+    public void run() {
+        runScheduler();
     }
 
-    private static Process findPriorityPreemptor(LinkedList<Process> readyQueue, Process current) {
-        if (readyQueue.isEmpty()) return null;
-        return readyQueue.stream()
-                .filter(p -> p.priority < current.priority)
-                .min(Comparator.comparingInt(p -> p.priority))
-                .orElse(null);
+    // In AGScheduler.java, add these methods:
+
+    public List<GanttSegment> getGanttSegments() {
+        return ganttSegments;
     }
 
-    private static Process findSJFPreemptor(LinkedList<Process> readyQueue, Process current) {
-        if (readyQueue.isEmpty()) return null;
-        return readyQueue.stream()
-                .filter(p -> p.remaining_time < current.remaining_time)
-                .min(Comparator.comparingInt(p -> p.remaining_time))
-                .orElse(null);
+    public List<Process> getCompletedProcesses() {
+        return completedProcesses;
+    }
+}
+
+// =========================================================
+// 2. Gantt Segment Class
+// =========================================================
+class GanttSegment {
+    public String name;
+    public String stage;
+    public int startTime;
+    public int endTime;
+
+    public GanttSegment(String name, String stage, int startTime, int endTime) {
+        this.name = name;
+        this.stage = stage;
+        this.startTime = startTime;
+        this.endTime = endTime;
     }
 
-    private static void updateQuantumCaseI(Process process) {
-        process.quantum += 2;
-        if (process.quantum_history == null) {
-            process.quantum_history = new ArrayList<>();
-        }
-        process.quantum_history.add(process.quantum);
-    }
-
-    private static void updateQuantumCaseII(Process process, int remainingQ) {
-        process.quantum += (int) Math.ceil((double) remainingQ / 2);
-        if (process.quantum_history == null) {
-            process.quantum_history = new ArrayList<>();
-        }
-        process.quantum_history.add(process.quantum);
-    }
-
-    private static void updateQuantumCaseIII(Process process, int remainingQ) {
-        process.quantum += remainingQ;
-        if (process.quantum_history == null) {
-            process.quantum_history = new ArrayList<>();
-        }
-        process.quantum_history.add(process.quantum);
-    }
-
-    private static AG_output buildAGOutput(List<Process> processes, List<String> executionOrder) {
-        List<process_AG_out> processResults = new ArrayList<>();
-        double totalWT = 0;
-        double totalTAT = 0;
-
-        for (Process p : processes) {
-            process_AG_out result = new process_AG_out();
-            result.name = p.name;
-
-            // حساب waiting time و turnaround time
-            if (p.completion_time != -1) {
-                result.turnaroundTime = p.completion_time - p.arrival_time;
-                result.waitingTime = result.turnaroundTime - p.burst_time;
-            } else {
-                result.turnaroundTime = 0;
-                result.waitingTime = 0;
-            }
-
-            // إعداد quantum history
-            if (p.quantum_history != null && !p.quantum_history.isEmpty()) {
-                result.quantumHistory = new ArrayList<>();
-                for (Integer q : p.quantum_history) {
-                    result.quantumHistory.add(q);
-                }
-                // إضافة 0 إذا انتهت العملية
-                if (p.remaining_time == 0 && !result.quantumHistory.contains(0)) {
-                    result.quantumHistory.add(0);
-                }
-            } else {
-                result.quantumHistory = Arrays.asList(p.quantum, 0);
-            }
-
-            processResults.add(result);
-            totalWT += result.waitingTime;
-            totalTAT += result.turnaroundTime;
-        }
-
-        double avgWT = totalWT / processes.size();
-        double avgTAT = totalTAT / processes.size();
-
-        return new AG_output(executionOrder, processResults, avgWT, avgTAT);
+    @Override
+    public String toString() {
+        return String.format("%s(%s) [%d-%d]", name, stage, startTime, endTime);
     }
 }

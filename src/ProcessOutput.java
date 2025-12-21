@@ -7,6 +7,7 @@ public class ProcessOutput {
     double waitingTime;
     double turnaroundTime;
     Integer quantumTime;
+    List<Integer> quantumHistory = new ArrayList<>();
 
     @Override
     public boolean equals(Object obj) {

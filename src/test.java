@@ -1,253 +1,188 @@
-//import java.util.List;
-//import java.util.ArrayList;
+//import java.util.*;
 //
-//public class PriorityScheduler implements Scheduler {
-//    List<process> waiting_processes = new ArrayList<>();
-//    List<process> ready_queue = new ArrayList<>();
-//    List<process> processed = new ArrayList<>();
-//    List<String> execution_order = new ArrayList<>();
-//    int contextSwitch;
-//    int agingInterval;
-//    int currentTime = 0;
-//    process running_process;
+//class AGScheduler {
+//    private LinkedList<process> readyQueue = new LinkedList<>();
+//    private List<process> allProcesses;
+//    private List<process> completedProcesses = new ArrayList<>();
+//    private List<GanttSegment> ganttSegments = new ArrayList<>();
 //
-//    @Override
-//    public void schedule() {
-//        running_process = null;
-//        boolean first_iter = true;
+//    public AGScheduler(List<process> processes) {
+//        this.allProcesses = new ArrayList<>(processes);
+//        allProcesses.sort(Comparator.comparingInt(p -> p.arrival_time));
+//    }
 //
-//        while (processed.size() < waiting_processes.size()) {
+//    public List<GanttSegment> getGanttSegments() {
+//        return ganttSegments;
+//    }
 //
-//            // Add newly arrived processes to ready queue
-//            AddInReady();
-//            // Apply aging to ready processes (before picking next)
-//            CheckForAging();
-//            // Pick next process based on priority
-//            process next = null;
-//            if (!ready_queue.isEmpty()) {
-//                next = PickHighestPriority();
+//    private int[] calculateStagesTimes(process p) {
+//        int q = p.time_quantum;
+//        int fcfsTime = (int) Math.ceil(0.25 * q);
+//        int priorityTime = (int) Math.ceil(0.25 * q);
+//        int sjfTime = q - (fcfsTime + priorityTime);
+//        return new int[]{fcfsTime, priorityTime, Math.max(0, sjfTime)};
+//    }
+//
+//    private void updateQuantum(process p, int caseNum, int remainingQ) {
+//        if (caseNum == 1) p.time_quantum += 2;
+//        else if (caseNum == 2) p.time_quantum += (int) Math.ceil((double) remainingQ / 2);
+//        else if (caseNum == 3) p.time_quantum += remainingQ;
+//
+//        p.updateQuantumHistory(p.time_quantum);
+//    }
+//
+//    private process findPriorityPreemptor() {
+//        if (readyQueue.isEmpty()) return null;
+//        return readyQueue.stream().min(Comparator.comparingInt(p -> p.priority)).orElse(null);
+//    }
+//
+//    private process findSJFPreemptor() {
+//        if (readyQueue.isEmpty()) return null;
+//        return readyQueue.stream().min(Comparator.comparingInt(p -> p.remaining_time)).orElse(null);
+//    }
+//
+//    public void runScheduler() {
+//        int currentTime = 0;
+//        process currentRunning = null;
+//        int processIndex = 0;
+//        process preemptor = null;
+//
+//        while (completedProcesses.size() < allProcesses.size()) {
+//            while (processIndex < allProcesses.size() && allProcesses.get(processIndex).arrival_time <= currentTime) {
+//                if (!readyQueue.contains(allProcesses.get(processIndex))) {
+//                    readyQueue.add(allProcesses.get(processIndex));
+//                }
+//                processIndex++;
 //            }
 //
-//            // Handle preemption / context switch
-//            if (next != null && next != running_process) {
-//                if(!first_iter)
-//                    HandleContextSwitch(next);
-//                running_process = next;
-//                first_iter = false;
+//            if (currentRunning == null || currentRunning.remaining_time == 0 || preemptor != null) {
+//                if (currentRunning != null && currentRunning.remaining_time == 0) {
+//                    currentRunning.completion_time = currentTime;
+//                    currentRunning.computeTimes();
+//                    currentRunning.time_quantum = 0;
+//                    currentRunning.quantumHistory.add(0);
+//                    completedProcesses.add(currentRunning);
+//                }
 //
-//                // only add to execution order if switching or starting
-//                if(running_process != null){
-//                    if (!execution_order.isEmpty()) {
-//                        String last = execution_order.get(execution_order.size() - 1);
-//                        if (!last.equals(next.name)) {
-//                            execution_order.add(next.name);
-//                        }
-//                    } else {
-//                        execution_order.add(next.name);
-//                    }
-//
+//                if (preemptor != null) {
+//                    currentRunning = preemptor;
+//                    preemptor = null;
+//                    readyQueue.remove(currentRunning);
+//                } else if (readyQueue.isEmpty()) {
+//                    if (processIndex < allProcesses.size()) {
+//                        currentTime = allProcesses.get(processIndex).arrival_time;
+//                        continue;
+//                    } else break;
+//                } else {
+//                    currentRunning = readyQueue.poll();
 //                }
 //            }
 //
-//            // CPU idle advance time and continue
-//            if (running_process == null) {
-//                AdvanceTimeUnit();
+//            int[] stages = calculateStagesTimes(currentRunning);
+//            int qBeforeRun = currentRunning.time_quantum;
+//            int totalExecutedInThisTurn = 0;
+//            int segmentStart = currentTime;
+//
+//            // FCFS Stage
+//            int runFCFS = Math.min(stages[0], currentRunning.remaining_time);
+//            for (int i = 0; i < runFCFS; i++) {
+//                currentRunning.remaining_time--;
+//                currentTime++;
+//                totalExecutedInThisTurn++;
+//                updateArrived(currentTime, processIndex);
+//                if (currentRunning.remaining_time == 0) break;
+//            }
+//            ganttSegments.add(new GanttSegment(currentRunning.name, "FCFS", segmentStart, currentTime));
+//            if (currentRunning.remaining_time == 0) continue;
+//
+//            // Priority Check
+//            process pPre = findPriorityPreemptor();
+//            if (pPre != null && pPre.priority < currentRunning.priority) {
+//                updateQuantum(currentRunning, 2, qBeforeRun - totalExecutedInThisTurn);
+//                readyQueue.addLast(currentRunning);
+//                preemptor = pPre;
+//                currentRunning = null;
 //                continue;
 //            }
 //
-//            else{
-//                //  Execute 1 time unit
-//                Execute();
+//            // Priority Stage
+//            segmentStart = currentTime;
+//            int runPriority = Math.min(stages[1], currentRunning.remaining_time);
+//            for (int i = 0; i < runPriority; i++) {
+//                currentRunning.remaining_time--;
+//                currentTime++;
+//                totalExecutedInThisTurn++;
+//                updateArrived(currentTime, processIndex);
+//                if (currentRunning.remaining_time == 0) break;
 //            }
-//            CheckProcessCompletion();
+//            ganttSegments.add(new GanttSegment(currentRunning.name, "Priority", segmentStart, currentTime));
+//            if (currentRunning.remaining_time == 0) continue;
 //
-//        }
-//    }
-//
-//    void AddInReady(){
-//        // add new processes in each possible arrival time from waiting queue to ready queue to be processed
-//        for(process p : waiting_processes){
-//            if((p.arrival_time <= currentTime) &&(p.remaining_time > 0) && !(processed.contains(p)) && !(ready_queue.contains(p))){
-//                p.readyQueueIndex = ready_queue.size();
-//                ready_queue.add(p);
-//                p.lastReadyTime = currentTime;
+//            // SJF Check
+//            process sPre = findSJFPreemptor();
+//            if (sPre != null && sPre.remaining_time < currentRunning.remaining_time) {
+//                updateQuantum(currentRunning, 3, qBeforeRun - totalExecutedInThisTurn);
+//                readyQueue.addLast(currentRunning);
+//                preemptor = sPre;
+//                currentRunning = null;
+//                continue;
 //            }
-//        }
-//    }
 //
-//    boolean CheckForAging(){
-//        // apply aging on starving processes
-//        boolean aged = false;
-//        for(process p : ready_queue){
-//            if (p != running_process) {
-//                int waiting_time = currentTime - p.lastReadyTime;  //waiting = total time in system - burst time
-//                System.out.println(
-//                        "[AGING CHECK] t=" + currentTime +
-//                                " p=" + p.name +
-//                                " lastReady=" + p.lastReadyTime +
-//                                " waited=" + (currentTime - p.lastReadyTime) +
-//                                " prio=" + p.priority +
-//                                "index= " + p.readyQueueIndex
-//                );
-//                if(waiting_time >= agingInterval){
-//                    //waiting_time is increased by agingInterval ex.5, 10, 15,...
-//                    p.priority = (p.priority == 1)?1 : p.priority - 1;  // decrease num, increase priority, if not already == 1
-//                    //p.lastReadyTime = currentTime;
+//            // SJF Preemptive Stage
+//            segmentStart = currentTime;
+//            int runSJF = Math.min(stages[2], currentRunning.remaining_time);
+//            boolean isPreempted = false;
+//            for (int i = 0; i < runSJF; i++) {
+//                currentRunning.remaining_time--;
+//                currentTime++;
+//                totalExecutedInThisTurn++;
+//                updateArrived(currentTime, processIndex);
+//                if (currentRunning.remaining_time == 0) break;
 //
-//                    // to not aging the following time units infinitely
-//                    p.lastReadyTime = currentTime;
-//                    aged = true;
+//                process sjfP = findSJFPreemptor();
+//                if (sjfP != null && sjfP.remaining_time < currentRunning.remaining_time) {
+//                    updateQuantum(currentRunning, 3, qBeforeRun - totalExecutedInThisTurn);
+//                    readyQueue.addLast(currentRunning);
+//                    preemptor = sjfP;
+//                    isPreempted = true;
+//                    break;
 //                }
+//            }
+//            ganttSegments.add(new GanttSegment(currentRunning.name, "SJF", segmentStart, currentTime));
+//            if (isPreempted) { currentRunning = null; continue; }
 //
-//
+//            // Quantum End Case
+//            if (currentRunning != null && currentRunning.remaining_time > 0 && totalExecutedInThisTurn >= qBeforeRun) {
+//                updateQuantum(currentRunning, 1, 0);
+//                readyQueue.addLast(currentRunning);
+//                currentRunning = null;
 //            }
 //        }
-//        return aged;
 //    }
 //
-//    void AdvanceTimeUnit(){
-//        currentTime ++;
-//        // handle things change every time unit
-//        AddInReady();
-//        process next = null;
-//        if (!ready_queue.isEmpty()) {
-//            next = PickHighestPriority();
-//        }
-//
-//        // Apply aging to ready processes (before picking next)
-//        CheckForAging();
-//    }
-//
-//    process PickHighestPriority(){
-//        //sorting ready queue by priority then the arrival time
-//        // we define the sort function using lambda function which return int
-//        // based on it sort function determine the order
-//        // if equal also in arrival time it treat both the same, any order is ok
-//        // this the calling of defined lambda function at the same time
-//        ready_queue.sort((p1, p2) ->{
-//            if(p1.priority != p2.priority)
-//                return p1.priority - p2.priority;
-//            System.out.println("prio comparator: "+ready_queue.get(0).name);
-//            if(p1.arrival_time != p2.arrival_time)
-//                return p1.arrival_time - p2.arrival_time;
-//            System.out.println("arrival comparator: "+ready_queue.get(0).name);
-//            return p1.readyQueueIndex - p2.readyQueueIndex;
-//        });
-//        System.out.println("order comparator: "+ready_queue.get(0).name);
-//
-//        System.out.println();
-//
-//        // pick the highest priority process
-//        System.out.println("final comparator result: "+ready_queue.get(0).name);
-//        return ready_queue.get(0);
-//    }
-//
-//
-//
-//    void HandleContextSwitch(process next_process){
-//        // handle context switch before executing the next process
-//        // the time the CPU remain idle in must be added to time counter (virtual clock)
-//        // the second condition is the key to know the highest priority process is changed and we must switch to process
-//
-//        if((running_process != next_process)){
-//            // update last ready time when re-entering ready queue after preemption
-//            if(running_process != null && running_process.remaining_time > 0)
-//                running_process.lastReadyTime = currentTime;
-//
-//            for(int i = 0; i < contextSwitch; i++){
-//                System.out.println("t = " + currentTime+ "CS");
-//                AdvanceTimeUnit();
-//                AddInReady();
+//    private void updateArrived(int time, int index) {
+//        while (index < allProcesses.size() && allProcesses.get(index).arrival_time <= time) {
+//            if (!readyQueue.contains(allProcesses.get(index))) {
+//                readyQueue.add(allProcesses.get(index));
 //            }
-//
-//            running_process = null;
+//            index++;
 //        }
-//
 //    }
 //
-//    void Execute(){
-//
-//
-//        boolean aged = CheckForAging();
-//        process highest = PickHighestPriority();
-//
-//        if(highest != running_process){
-//            //System.out.println("here");
-//            HandleContextSwitch(highest);
-//            running_process = highest;
-//            // only add to execution order if switching or starting
-//            if(running_process != null){
-//                if (!execution_order.isEmpty()) {
-//                    String last = execution_order.get(execution_order.size() - 1);
-//                    if (!last.equals(highest.name)) {
-//                        execution_order.add(highest.name);
-//                    }
-//                } else {
-//                    execution_order.add(highest.name);
-//                }
-//
-//            }
+//    public void printResults() {
+//        System.out.println("\n--- AG SCHEDULER RESULTS ---");
+//        completedProcesses.sort(Comparator.comparing(p -> p.name));
+//        System.out.printf("%-5s | %-5s | %-5s | %-5s | %-5s | %-5s | %-5s%n",
+//                "Proc", "AT", "BT", "CT", "TAT", "WT", "Quantum History");
+//        double totalWT = 0, totalTAT = 0;
+//        for (process p : completedProcesses) {
+//            String history = p.quantumHistory.toString();
+//            System.out.printf("%-5s | %-5d | %-5d | %-5d | %-5d | %-5d| %-5s%n",
+//                    p.name, p.arrival_time, p.burst_time, p.completion_time, p.turnaround_time, p.waiting_time , history);
+//            totalWT += p.waiting_time;
+//            totalTAT += p.turnaround_time;
 //        }
-//        else{
-//            // debugging
-//            System.out.println("t = " + currentTime+ "    name: "+highest.name + " priority: " + highest.priority + ", rem: " + highest.remaining_time + ", lastReady: "+highest.lastReadyTime+" , index: " + highest.readyQueueIndex + "    ");
-//            System.out.println("------------------------------------------------------------------------------------------------");
-//            // execute the highest priority process either changed or not
-//            //running_process = next_process;
-//            running_process.remaining_time--;   // update the time by only one time before testing priority (preemptive)
-//
-//            AdvanceTimeUnit();  // update the clock
-//
-//        }
-//
-//    }
-//
-//    void CheckProcessCompletion(){
-//        // check for completion of some process
-//        if(running_process != null && running_process.remaining_time <= 0){
-//            running_process.remaining_time = 0;
-//            running_process.completion_time = currentTime;
-//            running_process.computeTimes();
-//            processed.add(running_process);
-//            ready_queue.remove(running_process);
-//            running_process = null;
-//        }
-//
-//    }
-//
-//    @Override
-//    public void print(){
-//        double totalWaiting = 0;
-//        double totalTurnaround = 0;
-//
-//        System.out.println("\"Priority\": {");
-//        System.out.print("\"executionOrder\": [");
-//        for(int i = 0; i < execution_order.size(); i++){
-//            System.out.print("\"" + execution_order.get(i) + "\"");
-//            if(i < execution_order.size() - 1)
-//                System.out.print(", ");
-//        }
-//        System.out.println("],");
-//        System.out.println("\"processResults\": [");
-//        for(int i = 0; i < processed.size(); i++){
-//            process p = processed.get(i);
-//            totalWaiting += p.waiting_time;
-//            totalTurnaround += p.turnaround_time;
-//
-//            System.out.print("{\"name\": \"" + p.name + "\", "
-//                    + "\"waitingTime\": " + p.waiting_time + ", "
-//                    + "\"turnaroundTime\": " + p.turnaround_time + "}");
-//
-//            if(i < execution_order.size() - 1)
-//                System.out.print(", ");
-//            System.out.println();
-//        }
-//        System.out.println("        ],");
-//        double avgWaiting = totalWaiting / processed.size();
-//        double avgTurnaround = totalTurnaround / processed.size();
-//
-//        System.out.printf("\"averageWaitingTime\": %.1f,\n", avgWaiting);
-//        System.out.printf("\"averageTurnaroundTime\": %.1f,\n", avgTurnaround);
-//        System.out.println("      }");
+//        System.out.printf("\nAverage Waiting Time: %.2f%n", totalWT / completedProcesses.size());
+//        System.out.printf("Average Turnaround Time: %.2f%n", totalTAT / completedProcesses.size());
 //    }
 //}

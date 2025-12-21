@@ -16,23 +16,24 @@ public class actualOutputs {
         PriorityScheduler priority = new PriorityScheduler();
 
         for (InputData data : inputs){
-             rr_out = rr.schedule(data.copy());
-             sjf_out = sjf.schedule(data.copy());
-             priority_out = priority.schedule(data.copy());
-             expectedOutput expected = new expectedOutput(rr_out, sjf_out, priority_out);
-             actual_output.add(expected);
+            rr_out = rr.schedule(data.copy());
+            sjf_out = sjf.schedule(data.copy());
+            priority_out = priority.schedule(data.copy());
+            expectedOutput expected = new expectedOutput(rr_out, sjf_out, priority_out);
+            actual_output.add(expected);
         }
         return actual_output;
     }
 
     public List<AG_output> get_actual_AG_output(List<InputData> inputs){
         List<AG_output> actual_outputs = new ArrayList<>();
-        AG_output output;
 
-        AGScheduler ag = new AGScheduler();
+
         for (InputData data : inputs){
-            output = AGScheduler.runAGScheduler(data);
-            actual_outputs.add(output);
+            AGScheduler ag = new AGScheduler();
+             AG_output output = ag.runAG(data.copy());
+             actual_outputs.add(output);
+            System.out.println(output.executionOrder);
         }
         return actual_outputs;
     }

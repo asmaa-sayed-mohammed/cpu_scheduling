@@ -11,7 +11,7 @@ public class Main {
 
     public static void main(String[] args) throws IOException, ParseException {
         readFromJson read = new readFromJson();
-        actualOutputs actual = new actualOutputs();
+//        actualOutputs actual = new actualOutputs();
 
         File[] otherSchedulerFiles = read.getFiles();
         assert otherSchedulerFiles != null && otherSchedulerFiles.length > 0 : "No Other_Schedulers JSON files found!";
@@ -31,6 +31,7 @@ public class Main {
         List<AG_output> expected_AG_outputs = read.get_AG_output_json(agFiles);
         assert expected_AG_outputs != null && !expected_AG_outputs.isEmpty() : "No expected output data read from AG files!";
 
+        actualOutputs actual = new actualOutputs();
         List<expectedOutput> actual_outputs = actual.get_actual_output(inputs);
         List<AG_output> actual_AG_output = actual.get_actual_AG_output(AG_input);
         assert actual_outputs != null && !actual_outputs.isEmpty() : "No actual output generated for Other_Schedulers!";

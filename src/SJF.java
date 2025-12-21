@@ -88,8 +88,7 @@ public class SJF implements Scheduler{
                 // Check if src.process is completed
                 if (currentlyRunningProcess.remaining_time == 0) {
                     currentlyRunningProcess.completion_time = currentTime;
-                    List<Integer> times = new ArrayList<>(2);
-                    times = currentlyRunningProcess.computeTimes();// Compute times
+                    currentlyRunningProcess.computeTimes();// Compute times
                     totalCompleted++;
                     currentlyRunningProcess = null; // Freeing up the CPU to allow a new src.process to work in the next time.
                 }

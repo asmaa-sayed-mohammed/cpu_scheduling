@@ -8,11 +8,10 @@ public class AG_output {
     public double averageWaitingTime;
     public double averageTurnaroundTime;
 
-    public AG_output(List<String> executionOrder, List<process_AG_out> processResults,
-                     double averageWT, double averageTAT) {
+    public AG_output(List<String> executionOrder, List<process_AG_out> processResults, double averageWaitingTime, double averageTurnaroundTime) {
         this.executionOrder = executionOrder;
         this.processResults = processResults;
-        this.averageWaitingTime = averageWT;
-        this.averageTurnaroundTime = averageTAT;
+        this.averageWaitingTime = averageWaitingTime;
+        this.averageTurnaroundTime = averageTurnaroundTime;
     }
 }
