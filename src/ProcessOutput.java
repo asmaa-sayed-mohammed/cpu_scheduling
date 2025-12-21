@@ -4,8 +4,8 @@ import java.util.*;
 
 public class ProcessOutput {
     String name;
-    int waitingTime;
-    int turnaroundTime;
+    double waitingTime;
+    double turnaroundTime;
     Integer quantumTime;
 
     @Override

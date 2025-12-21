@@ -60,8 +60,8 @@ public class RoundRobin implements Scheduler{
         }
         averagewt = averagewt / n;
         averagetat = averagetat / n;
-        double avgWaitingRounded = Math.round(averagewt * 10.0) / 10.0;
-        double avgTurnaroundRounded = Math.round(averagetat * 10.0) / 10.0;
-        return new general_output(executionOrder, outputs, avgWaitingRounded, avgWaitingRounded);
+        double avgWaitingRounded = Math.round(averagewt * 100.0) / 100.0;
+        double avgTurnaroundRounded = Math.round(averagetat * 100.0) / 100.0;
+        return new general_output(executionOrder, outputs, avgWaitingRounded, avgTurnaroundRounded);
     }
 }

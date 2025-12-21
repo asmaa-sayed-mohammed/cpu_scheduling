@@ -117,8 +117,8 @@ public class SJF implements Scheduler{
 
         double avgTurnaroundTime = turnaroundTime / allProcesses.size();
         double avgWaitingTime = waitingTime / allProcesses.size();
-        double avgWaitingRounded = Math.round(avgWaitingTime * 10.0) / 10.0;
-        double avgTurnaroundRounded = Math.round(avgTurnaroundTime * 10.0) / 10.0;
+        double avgWaitingRounded = Math.round(avgWaitingTime * 100.0) / 100.0;
+        double avgTurnaroundRounded = Math.round(avgTurnaroundTime * 100.0) / 100.0;
         return new general_output(processList, processOutputs, avgWaitingRounded, avgTurnaroundRounded);
     }
 }

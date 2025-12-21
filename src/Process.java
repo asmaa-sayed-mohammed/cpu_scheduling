@@ -21,12 +21,14 @@ public class Process {
     public int waiting_time = 0;
     public int turnaround_time = 0;
     public int completion_time = 0;
+    public Integer quantum;
+    public List<Integer>quantum_history = new ArrayList<>();
 
     public Process(String name, int burst_time, int priority, Integer time_quantum, int arrival_time){
         this.name = name;
         this.burst_time = burst_time;
         this.priority = priority;
-        this.time_quantum = (time_quantum == null ? 0 : time_quantum);
+        this.quantum = (time_quantum == null ? 0 : time_quantum);
         this.arrival_time = arrival_time;
         this.remaining_time = burst_time;
     }
@@ -36,7 +38,7 @@ public class Process {
                 this.name,
                 this.burst_time,
                 this.priority,
-                this.time_quantum,
+                this.quantum,
                 this.arrival_time
         );
 
@@ -72,5 +74,29 @@ public class Process {
         }
 
         return new Process(name, burst, priority, quantum, arrival);
+    }
+
+    public int[] calculateStagesTimes() {
+        int q = this.quantum;
+        int fcfsTime = (int) Math.ceil(0.25 * q);
+        int priorityTime = (int) Math.ceil(0.25 * q);
+        int sjfTime = q - (fcfsTime + priorityTime);
+        if (sjfTime < 0) { sjfTime = 0; }
+        return new int[]{fcfsTime, priorityTime, sjfTime};
+    }
+
+    public void updateQuantumCaseI() {
+        this.quantum += 2;
+        quantum_history.add(quantum);
+    }
+
+    public void updateQuantumCaseII(int remainingQ) {
+        this.quantum += (int) Math.ceil((double) remainingQ / 2);
+        quantum_history.add(quantum);
+    }
+
+    public void updateQuantumCaseIII(int remainingQ) {
+        this.quantum += remainingQ;
+        quantum_history.add(quantum);
     }
 }
