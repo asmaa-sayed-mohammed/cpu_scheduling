@@ -5,16 +5,13 @@ import org.json.simple.JSONArray;
 
 public class outputReader {
     static AG_output get_AG_output(JSONObject root){
-        // جرب الحالة الأولى: إذا كان root يحتوي على expectedOutput
         if (root.containsKey("expectedOutput")) {
             JSONObject output = (JSONObject) root.get("expectedOutput");
             return readAGAlgorithmOutput(output);
         }
-        // الحالة الثانية: إذا كان root هو نفسه expectedOutput
         else if (root.containsKey("processResults")) {
             return readAGAlgorithmOutput(root);
         }
-        // إذا لم تكن أي من الحالتين
         else {
             throw new RuntimeException("Cannot find AG output structure. " +
                     "Available keys: " + root.keySet());
@@ -66,7 +63,6 @@ public class outputReader {
     static AG_output readAGAlgorithmOutput(JSONObject obj){
         if (obj == null) throw new RuntimeException("JSON object for AG output is null");
 
-        // تحويل executionOrder
         JSONArray orderArray = (JSONArray) obj.get("executionOrder");
         List<String> executionOrder = new ArrayList<>();
         if (orderArray != null) {

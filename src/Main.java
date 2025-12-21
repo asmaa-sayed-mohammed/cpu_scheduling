@@ -1,6 +1,7 @@
 package src;
 
 import org.json.simple.parser.ParseException;
+import org.testng.annotations.Test;
 
 import java.io.File;
 import java.io.IOException;
@@ -8,10 +9,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Main {
-
+@Test
     public static void main(String[] args) throws IOException, ParseException {
         readFromJson read = new readFromJson();
-//        actualOutputs actual = new actualOutputs();
+        actualOutputs actual = new actualOutputs();
 
         File[] otherSchedulerFiles = read.getFiles();
         assert otherSchedulerFiles != null && otherSchedulerFiles.length > 0 : "No Other_Schedulers JSON files found!";
@@ -31,7 +32,6 @@ public class Main {
         List<AG_output> expected_AG_outputs = read.get_AG_output_json(agFiles);
         assert expected_AG_outputs != null && !expected_AG_outputs.isEmpty() : "No expected output data read from AG files!";
 
-        actualOutputs actual = new actualOutputs();
         List<expectedOutput> actual_outputs = actual.get_actual_output(inputs);
         List<AG_output> actual_AG_output = actual.get_actual_AG_output(AG_input);
         assert actual_outputs != null && !actual_outputs.isEmpty() : "No actual output generated for Other_Schedulers!";
@@ -124,17 +124,53 @@ public class Main {
         assert actual != null && expected != null : "[AG schedule] One of the outputs is null!";
 
         assert actual.executionOrder.equals(expected.executionOrder) :
-                "[AG schedule] Execution Order mismatch: Actual=" + actual.executionOrder + ", Expected=" + expected.executionOrder;
+                "[AG schedule] Execution Order mismatch: Actual=" + actual.executionOrder +
+                        ", Expected=" + expected.executionOrder;
 
-        assert actual.processResults.equals(expected.processResults) :
-                "[AG schedule] Process Results mismatch: Actual=" + actual.processResults + ", Expected=" + expected.processResults;
+        List<process_AG_out> actualList = actual.processResults;
+        List<process_AG_out> expectedList = expected.processResults;
+
 
         assert Math.abs(actual.averageWaitingTime - expected.averageWaitingTime) < 1e-6 :
-                "[AG schedule] Average Waiting Time mismatch: Actual=" + actual.averageWaitingTime + ", Expected=" + expected.averageWaitingTime;
+                "[AG schedule] Average Waiting Time mismatch: actual=" + actual.averageWaitingTime + " Expected=" + expected.averageWaitingTime;
 
         assert Math.abs(actual.averageTurnaroundTime - expected.averageTurnaroundTime) < 1e-6 :
-                "[AG schedule] Average Turnaround Time mismatch: Actual=" + actual.averageTurnaroundTime + ", Expected=" + expected.averageTurnaroundTime;
+                "[AG schedule] Average Turnaround Time mismatch: actual=" + actual.averageTurnaroundTime + " Expected=" + expected.averageTurnaroundTime;
+
+        assert actualList.size() == expectedList.size() :
+                "[AG schedule] processResults size mismatch";
+
+        for (int i = 0; i < actualList.size(); i++) {
+            assert compare_AG_process(actualList.get(i), expectedList.get(i));
+        }
 
         return true;
     }
+
+
+    public static boolean compare_AG_process(process_AG_out actual, process_AG_out expected) {
+
+        assert actual.name.equals(expected.name) :
+                "[AG schedule] Name mismatch: actual=" + actual.name +
+                        ", expected=" + expected.name;
+
+        assert actual.turnaroundTime == expected.turnaroundTime :
+                "[AG schedule] Turnaround Time mismatch";
+
+        assert actual.waitingTime == expected.waitingTime :
+                "[AG schedule] Waiting Time mismatch";
+
+        List<Integer> fixed = new ArrayList<>();
+        for (Object o : expected.quantumHistory) {
+            fixed.add(((Long) o).intValue());
+        }
+        expected.quantumHistory = fixed;
+
+        assert actual.quantumHistory.equals(expected.quantumHistory) :
+                "[AG schedule] Quantum History mismatch: actual=" +
+                        actual.quantumHistory + ", expected=" + expected.quantumHistory;
+
+        return true;
+    }
+
 }

@@ -33,7 +33,6 @@ public class actualOutputs {
             AGScheduler ag = new AGScheduler();
              AG_output output = ag.runAG(data.copy());
              actual_outputs.add(output);
-            System.out.println(output.executionOrder);
         }
         return actual_outputs;
     }

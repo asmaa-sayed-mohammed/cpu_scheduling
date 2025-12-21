@@ -1,5 +1,4 @@
 package src;
-
 import org.json.simple.JSONObject;
 import java.util.ArrayList;
 import java.util.List;
@@ -31,23 +30,17 @@ public class Process {
         this.quantum = (quantum == null ? 0 : quantum);
         this.arrival_time = arrival;
 
-        // Initialize quantum history with initial value
         this.quantumTimeHistory = new ArrayList<>();
-        this.quantumTimeHistory.add(this.quantum); // Record initial quantum
+        this.quantumTimeHistory.add(this.quantum);
     }
 
-    /* ================= AG helpers ================= */
-
-    // Always record the current quantum value
     public void recordQuantum() {
-        // Always add current quantum to history
         quantumTimeHistory.add(quantum);
     }
 
-    // Clear and reinitialize quantum history
     public void resetQuantumHistory() {
         quantumTimeHistory.clear();
-        quantumTimeHistory.add(quantum); // Add initial quantum
+        quantumTimeHistory.add(quantum);
     }
 
     public int[] calculateStagesTimes() {
@@ -61,37 +54,33 @@ public class Process {
 
     public void updateQuantumCaseI() {
         quantum += 2;
-        recordQuantum(); // Record new quantum
+        recordQuantum();
     }
 
     public void updateQuantumCaseII(int remainingQ) {
         quantum += (int) Math.ceil((double) remainingQ / 2);
-        recordQuantum(); // Record new quantum
+        recordQuantum();
     }
 
     public void updateQuantumCaseIII(int remainingQ) {
         quantum += remainingQ;
-        recordQuantum(); // Record new quantum
+        recordQuantum();
     }
 
-    /* ================= Times ================= */
 
     public void computeTimes() {
         turnaround_time = completion_time - arrival_time;
         waiting_time = turnaround_time - burst_time;
     }
 
-    /* ================= Utils ================= */
-
     public Process copy() {
         Process p = new Process(name, burst_time, priority, quantum, arrival_time);
-        p.remaining_time = burst_time;      // Reset
-        p.startTime = -1;                   // Reset
-        p.completion_time = -1;             // Reset
-        p.waiting_time = 0;                 // Reset
-        p.turnaround_time = 0;              // Reset
+        p.remaining_time = burst_time;
+        p.startTime = -1;
+        p.completion_time = -1;
+        p.waiting_time = 0;
+        p.turnaround_time = 0;
 
-        // Copy quantum history
         p.quantumTimeHistory = new ArrayList<>(this.quantumTimeHistory);
         return p;
     }
@@ -113,7 +102,6 @@ public class Process {
         this.quantumTimeHistory.add(newValue);
     }
 
-    // Helper method to get quantum history as string
     public String getQuantumHistoryString() {
         StringBuilder sb = new StringBuilder();
         sb.append("[");

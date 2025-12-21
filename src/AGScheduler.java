@@ -1,10 +1,6 @@
 package src;
-import src.InputData;
 import java.util.*;
 
-// =========================================================
-// 3. AGScheduler Main Logic (Corrected Flow with User Input)
-// =========================================================
 class AGScheduler {
     public List<Process> allProcesses = new ArrayList<>();
 
@@ -27,20 +23,12 @@ class AGScheduler {
         }
     }
 
-    private void updateQuantum(Process p, int caseNum, int remainingQ) {
-        if (caseNum == 1) p.quantum += 2;
-        else if (caseNum == 2) p.quantum += (int) Math.ceil((double) remainingQ / 2);
-        else if (caseNum == 3) p.quantum += remainingQ;
-        p.updateQuantumHistory(p.quantum);
-
-    }
-
     public AG_output runAG(InputData input){
         allProcesses = new ArrayList<>();
         for (Process p : input.processes) {
             Process copy = p.copy();
-            copy.quantumTimeHistory.clear(); // تأكد أنه نظيف
-            copy.recordQuantum(); // سجل أول كوانتم
+            copy.quantumTimeHistory.clear();
+            copy.recordQuantum();
             allProcesses.add(copy);
         }
 
@@ -74,10 +62,28 @@ class AGScheduler {
             ag.quantumHistory = p.quantumTimeHistory;
             agOuts.add(ag);
         }
-
         double averageWaiting = totalWT / completedProcesses.size();
         double averageTurnaround = totalTAT / completedProcesses.size();
-        return new AG_output(executionOrder, agOuts, averageWaiting, averageTurnaround);
+        double avgWaitingRounded = Math.round(averageWaiting * 100.0) / 100.0;
+        double avgTurnaroundRounded = Math.round(averageTurnaround * 100.0) / 100.0;
+        agOuts.sort(Comparator.comparingInt(
+                ag -> Integer.parseInt(ag.name.replaceAll("[^0-9]", ""))
+        ));
+//        System.out.println("Execution order: "+executionOrder);
+//
+//        System.out.println("processes results: ");
+//
+//        for (process_AG_out ag : agOuts){
+//            System.out.println(ag.name + ", " + ag.waitingTime + ", " + ag.turnaroundTime + ", " + ag.quantumHistory);
+//        }
+//        System.out.println();
+//        System.out.println("Average waiting time: " + avgWaitingRounded);
+//        System.out.println("Average turnaround time: " + avgTurnaroundRounded);
+//        System.out.println("============================================================================================");
+
+
+
+        return new AG_output(executionOrder, agOuts, avgWaitingRounded, avgTurnaroundRounded);
     }
 
     private Process selectNextProcess() {
@@ -141,13 +147,11 @@ class AGScheduler {
             int totalExecutedInThisTurn = 0;
             int segmentStart = currentTime;
 
-            // احسب مراحل التنفيذ بناءً على الـ quantum الحالي
             int fcfsTime = (int) Math.ceil(0.25 * currentRunning.quantum);
             int priorityTime = (int) Math.ceil(0.25 * currentRunning.quantum);
             int sjfTime = currentRunning.quantum - (fcfsTime + priorityTime);
             if (sjfTime < 0) sjfTime = 0;
 
-            // FCFS Stage
             int runFCFS = Math.min(fcfsTime, currentRunning.remaining_time);
             for (int i = 0; i < runFCFS; i++) {
                 currentRunning.remaining_time--;
@@ -161,7 +165,6 @@ class AGScheduler {
             }
             if (currentRunning.remaining_time == 0) continue;
 
-            // Priority Check بعد مرحلة FCFS
             Process pPre = findPriorityPreemptor();
             if (pPre != null && pPre.priority < currentRunning.priority) {
                 currentRunning.quantum += (int) Math.ceil((double) (qBeforeRun - totalExecutedInThisTurn) / 2);
@@ -172,7 +175,6 @@ class AGScheduler {
                 continue;
             }
 
-            // Priority Stage
             segmentStart = currentTime;
             int runPriority = Math.min(priorityTime, currentRunning.remaining_time);
             for (int i = 0; i < runPriority; i++) {
@@ -187,7 +189,6 @@ class AGScheduler {
             }
             if (currentRunning.remaining_time == 0) continue;
 
-            // SJF Check بعد مرحلة Priority
             Process sPre = findSJFPreemptor();
             if (sPre != null && sPre.remaining_time < currentRunning.remaining_time) {
                 currentRunning.quantum += (qBeforeRun - totalExecutedInThisTurn);
@@ -198,7 +199,6 @@ class AGScheduler {
                 continue;
             }
 
-            // SJF Preemptive Stage
             segmentStart = currentTime;
             int runSJF = Math.min(sjfTime, currentRunning.remaining_time);
             boolean isPreempted = false;
@@ -209,7 +209,6 @@ class AGScheduler {
                 updateArrived(currentTime, processIndex);
                 if (currentRunning.remaining_time == 0) break;
 
-                // SJF Preemption أثناء التنفيذ
                 Process sjfP = findSJFPreemptor();
                 if (sjfP != null && sjfP.remaining_time < currentRunning.remaining_time) {
                     currentRunning.quantum += (qBeforeRun - totalExecutedInThisTurn);
@@ -228,7 +227,6 @@ class AGScheduler {
                 continue;
             }
 
-            // Quantum End Case - العملية أنهت كامل الـ quantum
             if (currentRunning != null && currentRunning.remaining_time > 0 && totalExecutedInThisTurn >= qBeforeRun) {
                 currentRunning.quantum += 2;
                 currentRunning.recordQuantum();
@@ -247,8 +245,6 @@ class AGScheduler {
         }
     }
 
-    // تمت إزالة دالة printResults() كما طلبت
-
     public void run() {
         runScheduler();
     }
@@ -262,9 +258,6 @@ class AGScheduler {
     }
 }
 
-// =========================================================
-// 2. Gantt Segment Class
-// =========================================================
 class GanttSegment {
     public String name;
     public String stage;
