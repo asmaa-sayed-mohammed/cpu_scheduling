@@ -215,6 +215,19 @@ public class PriorityScheduler implements Scheduler {
         double avgTurnaround = totalTurnaround / processed.size();
         double avgWaitingRounded = Math.round(avgWaiting * 100.0) / 100.0;
         double avgTurnaroundRounded = Math.round(avgTurnaround * 100.0) / 100.0;
+        System.out.println("Priority");
+        System.out.println("Execution order: "+execution_order);
+
+        System.out.println("processes results: ");
+
+        System.out.println("name | waiting time | turnaround time");
+        for (ProcessOutput ag : outputs){
+            System.out.println(ag.name + "\t |" + ag.waitingTime + "\t\t\t|" + ag.turnaroundTime );
+        }
+        System.out.println();
+        System.out.println("Average waiting time: " + avgWaitingRounded);
+        System.out.println("Average turnaround time: " + avgTurnaroundRounded);
+        System.out.println("============================================================================================");
         return new general_output(execution_order,outputs, avgWaitingRounded, avgTurnaroundRounded);
     }
 }

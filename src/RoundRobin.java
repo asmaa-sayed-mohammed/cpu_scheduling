@@ -62,6 +62,19 @@ public class RoundRobin implements Scheduler{
         averagetat = averagetat / n;
         double avgWaitingRounded = Math.round(averagewt * 100.0) / 100.0;
         double avgTurnaroundRounded = Math.round(averagetat * 100.0) / 100.0;
+        System.out.println("Round Robin");
+        System.out.println("Execution order: "+executionOrder);
+
+        System.out.println("processes results: ");
+
+        System.out.println("name | waiting time | turnaround time");
+        for (ProcessOutput ag : outputs){
+            System.out.println(ag.name + "\t |" + ag.waitingTime + "\t\t\t|" + ag.turnaroundTime);
+        }
+        System.out.println();
+        System.out.println("Average waiting time: " + avgWaitingRounded);
+        System.out.println("Average turnaround time: " + avgTurnaroundRounded);
+        System.out.println("============================================================================================");
         return new general_output(executionOrder, outputs, avgWaitingRounded, avgTurnaroundRounded);
     }
 }

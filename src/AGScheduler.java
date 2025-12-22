@@ -69,17 +69,18 @@ class AGScheduler {
         agOuts.sort(Comparator.comparingInt(
                 ag -> Integer.parseInt(ag.name.replaceAll("[^0-9]", ""))
         ));
-//        System.out.println("Execution order: "+executionOrder);
-//
-//        System.out.println("processes results: ");
-//
-//        for (process_AG_out ag : agOuts){
-//            System.out.println(ag.name + ", " + ag.waitingTime + ", " + ag.turnaroundTime + ", " + ag.quantumHistory);
-//        }
-//        System.out.println();
-//        System.out.println("Average waiting time: " + avgWaitingRounded);
-//        System.out.println("Average turnaround time: " + avgTurnaroundRounded);
-//        System.out.println("============================================================================================");
+        System.out.println("Execution order: "+executionOrder);
+
+        System.out.println("processes results: ");
+
+        System.out.println("name | waiting time | turnaround time | quantum history");
+        for (process_AG_out ag : agOuts){
+            System.out.println(ag.name + "\t |" + ag.waitingTime + "\t\t\t|" + ag.turnaroundTime + "\t\t\t  |" + ag.quantumHistory);
+        }
+        System.out.println();
+        System.out.println("Average waiting time: " + avgWaitingRounded);
+        System.out.println("Average turnaround time: " + avgTurnaroundRounded);
+        System.out.println("============================================================================================");
 
 
 

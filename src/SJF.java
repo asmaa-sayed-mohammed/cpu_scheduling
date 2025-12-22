@@ -7,7 +7,7 @@ import java.util.PriorityQueue;
 
 public class SJF implements Scheduler{
 
-    public general_output schedule (InputData input){
+    public general_output schedule (InputData input) {
         List<Process> allProcesses = input.processes;
         int contextSwitchingTime = input.contextSwitch;
         // sort all src.process by arrival_time
@@ -16,11 +16,10 @@ public class SJF implements Scheduler{
         PriorityQueue<Process> readyQueue = new PriorityQueue<>(new Comparator<Process>() {
             @Override
             public int compare(Process o1, Process o2) {
-                if (o1.remaining_time != o2.remaining_time){
-                    return Integer.compare(o1.remaining_time , o2.remaining_time);
-                }
-                else {
-                    return Integer.compare(o1.arrival_time , o2.arrival_time);
+                if (o1.remaining_time != o2.remaining_time) {
+                    return Integer.compare(o1.remaining_time, o2.remaining_time);
+                } else {
+                    return Integer.compare(o1.arrival_time, o2.arrival_time);
                 }
             }
         });
@@ -59,8 +58,7 @@ public class SJF implements Scheduler{
                     }
 
                     currentlyRunningProcess = readyQueue.poll();
-                }
-                else if (readyPro.remaining_time < currentlyRunningProcess.remaining_time) {
+                } else if (readyPro.remaining_time < currentlyRunningProcess.remaining_time) {
                     // Preemption: The src.process in the readyQueue is shorter than the one currently running.
 
                     // Stop the currently running src.process and return it to the queue
@@ -118,6 +116,20 @@ public class SJF implements Scheduler{
         double avgWaitingTime = waitingTime / allProcesses.size();
         double avgWaitingRounded = Math.round(avgWaitingTime * 100.0) / 100.0;
         double avgTurnaroundRounded = Math.round(avgTurnaroundTime * 100.0) / 100.0;
+        System.out.println("SJF");
+        System.out.println("Execution order: "+processList);
+
+        System.out.println("processes results: ");
+
+        System.out.println("name | waiting time | turnaround time");
+        for (ProcessOutput ag : processOutputs){
+            System.out.println(ag.name + "\t |" + ag.waitingTime + "\t\t\t|" + ag.turnaroundTime );
+        }
+        System.out.println();
+        System.out.println("Average waiting time: " + avgWaitingRounded);
+        System.out.println("Average turnaround time: " + avgTurnaroundRounded);
+        System.out.println("============================================================================================");
+
         return new general_output(processList, processOutputs, avgWaitingRounded, avgTurnaroundRounded);
     }
 }
